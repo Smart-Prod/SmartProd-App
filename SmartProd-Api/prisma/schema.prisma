@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  senha     String
+  createdAt DateTime @default(now())
+
+  products         Product[]
+  productionOrders ProductionOrder[]
+  invoices         Invoice[]
+}
+
+model Product {
+  id            Int         @id @default(autoincrement())
+  code          String      @unique
+  name          String
+  type          ProductType
+  unit          String
+  currentStock  Float       @default(0)
+  reservedStock Float       @default(0)
+  minStock      Float       @default(0)
+
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  bom           BOM?      @relation("ProductToBOM")
+  materialsUsed BOMItem[] @relation("MaterialToBOMItem")
+
+  productionOrders ProductionOrder[]
+  invoiceItems     InvoiceItem[]
+  stockMovements   StockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BOM {
+  id        Int       @id @default(autoincrement())
+  productId Int       @unique
+  product   Product   @relation("ProductToBOM", fields: [productId], references: [id])
+  materials BOMItem[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model BOMItem {
+  id         Int @id @default(autoincrement())
+  bomId      Int
+  materialId Int
+
+  bom      BOM     @relation(fields: [bomId], references: [id])
+  material Product @relation("MaterialToBOMItem", fields: [materialId], references: [id])
+
+  quantity Float
+}
+
+model ProductionOrder {
+  id          Int              @id @default(autoincrement())
+  productId   Int
+  usuarioId   Int
+  quantity    Float
+  status      ProductionStatus
+  createdAt   DateTime         @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  produced    Float
+
+  product Product @relation(fields: [productId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model Invoice {
+  id        Int           @id @default(autoincrement())
+  usuarioId Int
+  type      InvoiceType
+  number    String        @unique   // <-- ADICIONE
+  date      DateTime
+  supplier  String?
+  customer  String?
+  status    InvoiceStatus
+
+  usuario Usuario       @relation(fields: [usuarioId], references: [id])
+  items   InvoiceItem[]
+}
+
+
+model InvoiceItem {
+  id        Int   @id @default(autoincrement())
+  invoiceId Int
+  productId Int
+  quantity  Float
+  value     Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model StockMovement {
+  id        Int          @id @default(autoincrement())
+  productId Int
+  orderId   Int?
+  type      MovementType
+  quantity  Float
+  createdAt DateTime     @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
+enum ProductType {
+  MP
+  PA
+}
+
+enum ProductionStatus {
+  PLANEJADA
+  EM_PRODUCAO
+  PAUSADA
+  CONCLUIDA
+  CANCELADA
+}
+
+enum InvoiceType {
+  ENTRADA
+  SAIDA
+}
+
+enum InvoiceStatus {
+  PROCESSADA
+  PENDENTE
+  ERRO
+}
+
+enum MovementType {
+  ENTRADA
+  SAIDA
+  PRODUCAO
+  CONSUMO
+}

@@ -35,6 +35,7 @@ logs/
 
 # Prisma
 prisma/dev.db
+prisma/migrations
 
 
 # Sistema operacional

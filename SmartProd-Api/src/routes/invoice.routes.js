@@ -4,7 +4,7 @@ import { authenticateToken } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-router.post('/', authenticateToken, invoiceController.createInvoice);
-router.get('/', authenticateToken, invoiceController.getAllInvoices);
+router.post('/createInvoice', authenticateToken, invoiceController.createInvoice);
+router.get('/getAllInvoices', authenticateToken, invoiceController.getAllInvoices);
 
 export default router;

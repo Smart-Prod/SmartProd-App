@@ -3,7 +3,13 @@ import { successResponse, errorResponse } from '../utils/response.util.js';
 
 export const createInvoice = async (req, res) => {
   try {
-    const invoice = await invoiceService.createInvoice(req.body);
+    const payload = {
+      ...req.body,
+      usuarioId: req.user.id, // sempre vindo do token
+    };
+
+    const invoice = await invoiceService.createInvoice(payload);
+
     return successResponse(res, 201, 'Nota fiscal criada com sucesso!', invoice);
   } catch (error) {
     return errorResponse(res, 400, error.message);

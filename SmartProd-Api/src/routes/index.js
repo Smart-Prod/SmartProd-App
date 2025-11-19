@@ -6,6 +6,8 @@ import productionOrderRoutes from './productionOrder.routes.js';
 import bomRoutes from './bom.routes.js'
 import stockMovementRoutes from './stockMovement.routes.js';
 
+
+
 const router = express.Router();
 
 router.use('/users', userRoutes);

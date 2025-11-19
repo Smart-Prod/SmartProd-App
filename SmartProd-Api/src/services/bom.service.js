@@ -4,27 +4,43 @@ const prisma = new PrismaClient();
 export const createBOM = async (data) => {
   const { productId, materials } = data;
 
-  // 1. Verifica se o produto existe
+  if (!productId) throw new Error("productId é obrigatório.");
+  if (!Array.isArray(materials) || materials.length === 0)
+    throw new Error("A lista de materiais é obrigatória.");
+
+  // 1️⃣ Verifica se o produto final existe
   const product = await prisma.product.findUnique({
     where: { id: productId }
   });
 
   if (!product) throw new Error("Produto final não encontrado.");
 
-  // 2. Impede receita duplicada (porque productId é UNIQUE)
+  // 2️⃣ Impede receita duplicada
   const existingBOM = await prisma.bOM.findUnique({
     where: { productId }
   });
 
   if (existingBOM) throw new Error("Este produto já possui uma receita cadastrada.");
 
-  // 3. Valida materiais
-  for (const m of materials) {
-    const mat = await prisma.product.findUnique({ where: { id: m.materialId } });
-    if (!mat) throw new Error(`Material ${m.materialId} não existe.`);
+  // 3️⃣ Valida materiais em 1 query (melhor performance)
+  const materialIds = materials.map(m => m.materialId);
+
+  const foundMaterials = await prisma.product.findMany({
+    where: { id: { in: materialIds } }
+  });
+
+  if (foundMaterials.length !== materialIds.length) {
+    const foundIds = foundMaterials.map(m => m.id);
+    const missing = materialIds.filter(id => !foundIds.includes(id));
+    throw new Error(`Materiais inválidos: ${missing.join(", ")}`);
   }
 
-  // 4. Cria BOM + itens
+  // 4️⃣ Valida quantidade
+  materials.forEach(m => {
+    if (m.quantity <= 0) throw new Error(`Quantidade inválida para material ${m.materialId}`);
+  });
+
+  // 5️⃣ Cria BOM
   const bom = await prisma.bOM.create({
     data: {
       productId,

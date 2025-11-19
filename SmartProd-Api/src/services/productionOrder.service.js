@@ -23,12 +23,13 @@ export const createOrder = async (data) => {
   const bom = await prisma.bOM.findUnique({
     where: { productId },
     include: {
-      items: {
+      product: true,
+      materials: {
         include: {
-          material: true,
-        },
-      },
-    },
+          material: true
+        }
+      }
+    }
   });
 
   // Se não tiver receita cadastrada, retorna só a ordem
@@ -39,8 +40,8 @@ export const createOrder = async (data) => {
     };
   }
 
-  // 3 — Calcula o consumo de materiais
-  const materialsNeeded = bom.items.map((item) => ({
+  // 3 — Calcula o consumo de materiais (CORRIGIDO)
+  const materialsNeeded = bom.materials.map((item) => ({
     materialId: item.materialId,
     materialName: item.material.name,
     quantityPerUnit: item.quantity,

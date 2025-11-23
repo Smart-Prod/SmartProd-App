@@ -1,0 +1,51 @@
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Prisma - ignore migrations and local db in subprojects
+**/prisma/dev.db
+**/prisma/migrations/
+SmartProd-Api/prisma/migrations/
+
+# Vite / frontend build
+/public/build
+/.turbo
+/.next
+/.out
+
+# Environment
+.env
+.env.*.local
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+
+# TypeScript
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+jest-*.json
+
+# Build artifacts / packages
+*.tgz
+
+# Misc
+*.log
+
+# Optional: ignore local VSCode tasks or settings
+.vscode/*
+!.vscode/settings.json

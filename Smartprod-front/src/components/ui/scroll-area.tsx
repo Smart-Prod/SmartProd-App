@@ -1,9 +1,7 @@
-"use client";
+import * as React from "react"
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
-import * as React from "react";
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area@1.2.3";
-
-import { cn } from "./utils";
+import { cn } from "@/lib/utils"
 
 function ScrollArea({
   className,
@@ -55,4 +53,4 @@ function ScrollBar({
   );
 }
 
-export { ScrollArea, ScrollBar };
+export { ScrollArea, ScrollBar }

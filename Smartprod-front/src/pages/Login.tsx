@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate} from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
@@ -6,23 +7,29 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Factory } from 'lucide-react';
-import type { login } from '@/services/api';
 
 export const Login: React.FC = () => {
+  const navigate = useNavigate();   // ⬅️ DEVE FICAR AQUI
+
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
   const { login, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    const success = await login(email, password);
+
+    const success = await login(email, senha);
+
     if (!success) {
       setError('Email ou senha inválidos');
+    } else {
+      navigate('/dashboard'); // Agora funciona sem erro
     }
   };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-brand-light p-4">
@@ -54,8 +61,8 @@ export const Login: React.FC = () => {
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
                 placeholder="Sua senha"
                 required
               />
@@ -75,17 +82,14 @@ export const Login: React.FC = () => {
                 'Entrar'
               )}
             </Button>
-          </form>
-          
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 mb-2">Usuários de demonstração:</p>
-            <div className="space-y-1 text-xs">
-              <p><strong>Admin:</strong> admin@sistema.com</p>
-              <p><strong>Gestor:</strong> gestor@sistema.com</p>
-              <p><strong>Operador:</strong> operador@sistema.com</p>
-              <p className="text-gray-500 mt-2">Senha para todos: <strong>123456</strong></p>
+
+            <div className="text-sm text-center">
+              Não tem uma conta?{' '}
+              <Link to="/register" className="text-brand-orange font-medium">
+                Registre-se
+              </Link>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>

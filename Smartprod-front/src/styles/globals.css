@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  /* Smart Prod Brand Colors */
+  --brand-orange: #FE924F;
+  --brand-gray: #535353;
+  --brand-white: #FFFFFF;
+  --brand-orange-light: #FFA66F;
+  --brand-orange-dark: #E87E3F;
+  --brand-gray-light: #737373;
+  --brand-gray-dark: #3A3A3A;
+  
+  --font-size: 16px;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 32.5%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 32.5%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 32.5%;
+  --primary: 22 99% 65%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 32.5%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 22 100% 97%;
+  --accent-foreground: 0 0% 32.5%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 22 99% 65%;
+  --chart-1: 22 99% 65%;
+  --chart-2: 0 0% 32.5%;
+  --chart-3: 22 100% 72%;
+  --chart-4: 0 0% 45%;
+  --chart-5: 22 82% 58%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 0 0% 32.5%;
+  --sidebar-primary: 22 99% 65%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 22 100% 97%;
+  --sidebar-accent-foreground: 0 0% 32.5%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 22 99% 65%;
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: 0 0% 10%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 15%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 15%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 22 99% 65%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 23%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 23%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 23%;
+  --accent-foreground: 22 99% 65%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 23%;
+  --input: 0 0% 23%;
+  --ring: 22 99% 65%;
+  --chart-1: 22 99% 65%;
+  --chart-2: 0 0% 64%;
+  --chart-3: 22 100% 72%;
+  --chart-4: 0 0% 45%;
+  --chart-5: 22 82% 58%;
+  --sidebar: 0 0% 15%;
+  --sidebar-foreground: 0 0% 96%;
+  --sidebar-primary: 22 99% 65%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 23%;
+  --sidebar-accent-foreground: 0 0% 96%;
+  --sidebar-border: 0 0% 23%;
+  --sidebar-ring: 22 99% 65%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Base typography */
+  h1 {
+    @apply text-2xl font-medium;
+  }
+
+  h2 {
+    @apply text-xl font-medium;
+  }
+
+  h3 {
+    @apply text-lg font-medium;
+  }
+
+  h4 {
+    @apply text-base font-medium;
+  }
+
+  p {
+    @apply text-base;
+  }
+
+  label {
+    @apply text-base font-medium;
+  }
+
+  button {
+    @apply text-base font-medium;
+  }
+
+  input {
+    @apply text-base;
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/**
+ * Smart Prod Custom Utility Classes
+ */
+@layer utilities {
+  /* Text Colors - Semantic */
+  .text-brand-orange {
+    color: var(--brand-orange);
+  }
+  
+  .text-brand-gray {
+    color: var(--brand-gray);
+  }
+  
+  .text-success {
+    color: #10B981;
+  }
+  
+  .text-warning {
+    color: var(--brand-orange);
+  }
+  
+  .text-danger {
+    color: #EF4444;
+  }
+  
+  .text-info {
+    color: var(--brand-gray-light);
+  }
+  
+  /* Background Colors - Semantic */
+  .bg-brand-orange {
+    background-color: var(--brand-orange);
+  }
+  
+  .bg-brand-gray {
+    background-color: var(--brand-gray);
+  }
+  
+  .bg-success {
+    background-color: #10B981;
+  }
+  
+  .bg-warning {
+    background-color: var(--brand-orange);
+  }
+  
+  .bg-danger {
+    background-color: #EF4444;
+  }
+  
+  .bg-info {
+    background-color: var(--brand-gray-light);
+  }
+  
+  /* Border Colors - Semantic */
+  .border-brand-orange {
+    border-color: var(--brand-orange);
+  }
+  
+  .border-brand-gray {
+    border-color: var(--brand-gray);
+  }
+  
+  /* Gradient Backgrounds */
+  .bg-gradient-brand {
+    background: linear-gradient(135deg, var(--brand-orange) 0%, var(--brand-orange-dark) 100%);
+  }
+  
+  .bg-gradient-brand-light {
+    background: linear-gradient(135deg, #FFF4ED 0%, #FFFFFF 100%);
+  }
+}

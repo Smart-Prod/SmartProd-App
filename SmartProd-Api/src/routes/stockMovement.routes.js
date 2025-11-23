@@ -4,7 +4,7 @@ import { authenticateToken } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-router.post('/', authenticateToken, stockMovementController.createMovement);
-router.get('/', authenticateToken, stockMovementController.getAllMovements);
+
+router.get('/getAllMovements', authenticateToken, stockMovementController.getAllMovements);
 
 export default router;

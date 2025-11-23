@@ -1,11 +1,12 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react@0.487.0";
-import { DayPicker } from "react-day-picker@8.10.1";
+import * as React from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { DayPicker } from "react-day-picker"
+import type { CustomComponents } from "react-day-picker"
 
-import { cn } from "./utils";
-import { buttonVariants } from "./button";
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "@/components/ui/button"
 
 function Calendar({
   className,
@@ -13,6 +14,30 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
+  // Explicitly type the icon renderer props to avoid implicit 'any' (TS7031).
+  // Use React.SVGProps<SVGSVGElement> so any svg-specific props passed by DayPicker are accepted.
+  const IconLeft = ({
+    className: iconClassName,
+    ...rest
+  }: { className?: string } & React.SVGProps<SVGSVGElement>) => (
+    <ChevronLeft className={cn("size-4", iconClassName)} {...rest} />
+  )
+
+  const IconRight = ({
+    className: iconClassName,
+    ...rest
+  }: { className?: string } & React.SVGProps<SVGSVGElement>) => (
+    <ChevronRight className={cn("size-4", iconClassName)} {...rest} />
+  )
+
+  // Cast to Partial<CustomComponents> via unknown to avoid excess property checks
+  // when providing an object literal with keys that the library's exact type may
+  // not list (resolves TS2353). This keeps the component renderers typed.
+  const components = {
+    IconLeft,
+    IconRight,
+  } as unknown as Partial<CustomComponents>
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -59,17 +84,10 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
-        ),
-      }}
+      components={components}
       {...props}
     />
-  );
+  )
 }
 
-export { Calendar };
+export { Calendar }

@@ -1,17 +1,12 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk@1.1.1";
-import { SearchIcon } from "lucide-react@0.487.0";
+import * as React from "react"
+import { DialogDescription, DialogTitle, type DialogProps } from "@radix-ui/react-dialog"
+import { Command as CommandPrimitive } from "cmdk"
+import { Search, SearchIcon } from "lucide-react"
 
-import { cn } from "./utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "./dialog";
+import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog"
 
 function Command({
   className,
@@ -174,4 +169,4 @@ export {
   CommandItem,
   CommandShortcut,
   CommandSeparator,
-};
+}

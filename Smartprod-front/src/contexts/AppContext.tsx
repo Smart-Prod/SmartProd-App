@@ -1,20 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { 
-  Product, 
-  BOM, 
-  StockMovement, 
-  ProductionOrder, 
-  Invoice 
-} from '../models';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import axios from 'axios';
+import type { Product, BOM, StockMovement, ProductionOrder, Invoice } from '../models/index';
 
-// Re-export models for backward compatibility
-export type { 
-  Product, 
-  BOM, 
-  StockMovement, 
-  ProductionOrder, 
-  Invoice 
-};
+export type { Product, BOM, StockMovement, ProductionOrder, Invoice };
 
 interface AppContextType {
   products: Product[];
@@ -22,103 +10,190 @@ interface AppContextType {
   stockMovements: StockMovement[];
   productionOrders: ProductionOrder[];
   invoices: Invoice[];
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (id: string, product: Partial<Product>) => void;
-  addProductionOrder: (order: Omit<ProductionOrder, 'id' | 'createdAt' | 'produced'>) => void;
-  updateProductionOrder: (id: string, order: Partial<ProductionOrder>) => void;
-  addStockMovement: (movement: Omit<StockMovement, 'id'>) => void;
-  addInvoice: (invoice: Omit<Invoice, 'id'>) => void;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<Product>;
+  updateProduct: (id: number, product: Partial<Product>) => Promise<void>;
+  addProductionOrder: (order: Omit<ProductionOrder, 'id' | 'createdAt' | 'produced'>) => Promise<ProductionOrder>;
+  updateProductionOrder: (id: number, order: Partial<ProductionOrder>) => Promise<void>;
+  addStockMovement: (movement: Omit<StockMovement, 'id' | 'createdAt'>) => Promise<StockMovement>;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'date'>) => Promise<Invoice>;
+  // addBOM accepts BOM without id — provider generates id
+  addBOM: (bom: Omit<BOM, 'id'>) => Promise<BOM>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
+  if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };
 
-// Mock data
-const initialProducts: Product[] = [
-  { id: '1', code: 'MP001', name: 'Aço Inox 304', type: 'MP', unit: 'kg', currentStock: 150, reservedStock: 20, minStock: 50 },
-  { id: '2', code: 'MP002', name: 'Parafuso M6x20', type: 'MP', unit: 'un', currentStock: 5000, reservedStock: 500, minStock: 1000 },
-  { id: '3', code: 'PA001', name: 'Suporte Metálico A1', type: 'PA', unit: 'un', currentStock: 25, reservedStock: 5, minStock: 10, bomId: '1' },
-  { id: '4', code: 'PA002', name: 'Base Industrial B2', type: 'PA', unit: 'un', currentStock: 8, reservedStock: 2, minStock: 5, bomId: '2' },
-];
-
-const initialBOMs: BOM[] = [
-  { id: '1', productId: '3', materials: [{ materialId: '1', quantity: 2.5 }, { materialId: '2', quantity: 4 }] },
-  { id: '2', productId: '4', materials: [{ materialId: '1', quantity: 5.0 }, { materialId: '2', quantity: 8 }] },
-];
+// Use Vite's import.meta.env for environment variable access
+const api = axios.create({
+  // VITE_API_URL provided in your message, fallback to prior default if not set
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api',
+  // You can add headers/interceptors here if needed
+});
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [boms, setBoms] = useState<BOM[]>(initialBOMs);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [boms, setBoms] = useState<BOM[]>([]);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [productionOrders, setProductionOrders] = useState<ProductionOrder[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
-  // Initialize with some mock data
   useEffect(() => {
-    const mockMovements: StockMovement[] = [
-      { id: '1', productId: '1', type: 'entrada', quantity: 100, date: new Date('2025-10-01'), notes: 'Compra Fornecedor A' },
-      { id: '2', productId: '2', type: 'entrada', quantity: 2000, date: new Date('2025-10-01'), notes: 'Compra Fornecedor B' },
-      { id: '3', productId: '3', type: 'producao', quantity: 10, date: new Date('2025-10-02'), orderId: '1' },
-    ];
+    let mounted = true;
+    const fetchData = async () => {
+      try {
+        const [productsRes, bomsRes, stockRes, ordersRes, invoicesRes] = await Promise.all([
+          api.get<Product[]>('/products'),
+          api.get<BOM[]>('/boms'),
+          api.get<StockMovement[]>('/stock-movements'),
+          api.get<ProductionOrder[]>('/production-orders'),
+          api.get<Invoice[]>('/invoices'),
+        ]);
 
-    const mockOrders: ProductionOrder[] = [
-      { id: '1', productId: '3', quantity: 50, status: 'em_producao', createdAt: new Date('2025-10-01'), startedAt: new Date('2025-10-02'), produced: 15 },
-      { id: '2', productId: '4', quantity: 20, status: 'planejada', createdAt: new Date('2025-10-02'), produced: 0 },
-    ];
+        if (!mounted) return;
 
-    setStockMovements(mockMovements);
-    setProductionOrders(mockOrders);
+        setProducts(productsRes.data);
+        setBoms(bomsRes.data);
+        setStockMovements(stockRes.data);
+        setProductionOrders(ordersRes.data);
+        setInvoices(invoicesRes.data);
+      } catch (err) {
+        console.error('Erro ao buscar dados da API:', err);
+      }
+    };
+
+    fetchData();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const addProduct = (product: Omit<Product, 'id'>) => {
-    const newProduct = { ...product, id: Date.now().toString() };
-    setProducts(prev => [...prev, newProduct]);
-  };
+  const genId = () => Date.now();
 
-  const updateProduct = (id: string, product: Partial<Product>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...product } : p));
-  };
+  const addProduct = useCallback(async (product: Omit<Product, 'id'>): Promise<Product> => {
+    try {
+      const res = await api.post<Product>('/products', product);
+      setProducts(prev => [...prev, res.data]);
+      return res.data;
+    } catch (err) {
+      console.warn('addProduct: API failed, using local fallback', err);
+      const newProduct: Product = { ...product, id: genId() };
+      setProducts(prev => [...prev, newProduct]);
+      return newProduct;
+    }
+  }, []);
 
-  const addProductionOrder = (order: Omit<ProductionOrder, 'id' | 'createdAt' | 'produced'>) => {
-    const newOrder = { ...order, id: Date.now().toString(), createdAt: new Date(), produced: 0 };
-    setProductionOrders(prev => [...prev, newOrder]);
-  };
+  const updateProduct = useCallback(async (id: number, product: Partial<Product>): Promise<void> => {
+    try {
+      await api.put(`/products/${id}`, product);
+      setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...product } : p)));
+    } catch (err) {
+      console.warn('updateProduct: API failed, applied local update', err);
+      setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...product } : p)));
+    }
+  }, []);
 
-  const updateProductionOrder = (id: string, order: Partial<ProductionOrder>) => {
-    setProductionOrders(prev => prev.map(o => o.id === id ? { ...o, ...order } : o));
-  };
+  const addProductionOrder = useCallback(async (
+    order: Omit<ProductionOrder, 'id' | 'createdAt' | 'produced'>
+  ): Promise<ProductionOrder> => {
+    const payload = { ...order, createdAt: new Date().toISOString(), produced: 0 };
+    try {
+      const res = await api.post<ProductionOrder>('/production-orders', payload);
+      setProductionOrders(prev => [...prev, res.data]);
+      return res.data;
+    } catch (err) {
+      console.warn('addProductionOrder: API failed, using local fallback', err);
+      const newOrder: ProductionOrder = { ...payload, id: genId() };
+      setProductionOrders(prev => [...prev, newOrder]);
+      return newOrder;
+    }
+  }, []);
 
-  const addStockMovement = (movement: Omit<StockMovement, 'id'>) => {
-    const newMovement = { ...movement, id: Date.now().toString() };
-    setStockMovements(prev => [newMovement, ...prev]);
-  };
+  const updateProductionOrder = useCallback(async (id: number, order: Partial<ProductionOrder>): Promise<void> => {
+    try {
+      await api.put(`/production-orders/${id}`, order);
+      setProductionOrders(prev => prev.map(o => (o.id === id ? { ...o, ...order } : o)));
+    } catch (err) {
+      console.warn('updateProductionOrder: API failed, applied local update', err);
+      setProductionOrders(prev => prev.map(o => (o.id === id ? { ...o, ...order } : o)));
+    }
+  }, []);
 
-  const addInvoice = (invoice: Omit<Invoice, 'id'>) => {
-    const newInvoice = { ...invoice, id: Date.now().toString() };
-    setInvoices(prev => [newInvoice, ...prev]);
-  };
+  const addStockMovement = useCallback(async (movement: Omit<StockMovement, 'id' | 'createdAt'>): Promise<StockMovement> => {
+    const payload = { ...movement, createdAt: new Date().toISOString() };
+    try {
+      const res = await api.post<StockMovement>('/stock-movements', payload);
+      setStockMovements(prev => [res.data, ...prev]);
+      return res.data;
+    } catch (err) {
+      console.warn('addStockMovement: API failed, using local fallback', err);
+      const newMovement: StockMovement = { ...payload, id: genId() };
+      setStockMovements(prev => [newMovement, ...prev]);
+      return newMovement;
+    }
+  }, []);
+
+  const addInvoice = useCallback(async (invoice: Omit<Invoice, 'id' | 'date'>): Promise<Invoice> => {
+    const payload = { ...invoice, date: new Date().toISOString() };
+    try {
+      const res = await api.post<Invoice>('/invoices', payload);
+      setInvoices(prev => [res.data, ...prev]);
+      return res.data;
+    } catch (err) {
+      console.warn('addInvoice: API failed, using local fallback', err);
+      const newInvoice: Invoice = { ...payload, id: genId() };
+      setInvoices(prev => [newInvoice, ...prev]);
+      return newInvoice;
+    }
+  }, []);
+
+  const addBOM = useCallback(async (bom: Omit<BOM, 'id'>): Promise<BOM> => {
+    try {
+      const res = await api.post<BOM>('/boms', bom);
+      setBoms(prev => [...prev, res.data]);
+      return res.data;
+    } catch (err) {
+      console.warn('addBOM: API failed, using local fallback', err);
+      const newBOM: BOM = { ...bom, id: genId() };
+      setBoms(prev => [...prev, newBOM]);
+      return newBOM;
+    }
+  }, []);
+
+  const value = useMemo(() => ({
+    products,
+    boms,
+    stockMovements,
+    productionOrders,
+    invoices,
+    addProduct,
+    updateProduct,
+    addProductionOrder,
+    updateProductionOrder,
+    addStockMovement,
+    addInvoice,
+    addBOM,
+  }), [
+    products,
+    boms,
+    stockMovements,
+    productionOrders,
+    invoices,
+    addProduct,
+    updateProduct,
+    addProductionOrder,
+    updateProductionOrder,
+    addStockMovement,
+    addInvoice,
+    addBOM,
+  ]);
 
   return (
-    <AppContext.Provider value={{
-      products,
-      boms,
-      stockMovements,
-      productionOrders,
-      invoices,
-      addProduct,
-      updateProduct,
-      addProductionOrder,
-      updateProductionOrder,
-      addStockMovement,
-      addInvoice,
-    }}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

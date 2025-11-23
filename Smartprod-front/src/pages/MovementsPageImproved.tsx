@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from 'react';
-import { useApp } from './AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Badge } from './ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Pagination, usePagination } from './Pagination';
-import { DateRangeValidator, useDateRangeValidation } from './DateRangeValidator';
-import { LoadingSpinner, LoadingOverlay, TableSkeleton, useLoading } from './LoadingSpinner';
-import { ErrorMessage, useErrorHandler } from './ErrorBoundary';
+import { useApp } from '../contexts/AppContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pagination, usePagination } from '../components/common/Pagination';
+import { DateRangeValidator, useDateRangeValidation } from '../utils/DateRangeValidator';
+import { LoadingSpinner, LoadingOverlay, TableSkeleton, useLoading } from '../components/common/LoadingSpinner';
+import { ErrorMessage, useErrorHandler } from '../utils/ErrorBoundary';
 import { ArrowUp, ArrowDown, Factory, Truck, Filter, Download, Calendar, RefreshCw, Search, X } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export const MovementsPageImproved: React.FC = () => {
   const { stockMovements, products } = useApp();

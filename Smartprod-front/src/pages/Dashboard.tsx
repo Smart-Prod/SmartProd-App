@@ -1,19 +1,43 @@
 import React from 'react';
 import { useApp } from '../contexts/AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Progress } from '../components/ui/progress';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { 
-  Package, 
-  Factory, 
-  AlertTriangle, 
-  TrendingUp, 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Package,
+  Factory,
+  AlertTriangle,
+  TrendingUp,
   Clock,
   CheckCircle,
   XCircle
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+
+type Status = 'planejada' | 'em_producao' | 'pausada' | 'concluida' | 'cancelada';
+
+const COLORS = ['#FE924F', '#535353', '#FFA66F', '#10B981'];
+
+const statusColors: Record<Status, string> = {
+  planejada: 'bg-info',
+  em_producao: 'bg-brand-orange',
+  pausada: 'bg-gray-500',
+  concluida: 'bg-success',
+  cancelada: 'bg-danger'
+};
+
+// runtime guard to narrow unknown/any status values to the Status union
+function isStatus(value: unknown): value is Status {
+  return (
+    typeof value === 'string' &&
+    (value === 'planejada' ||
+      value === 'em_producao' ||
+      value === 'pausada' ||
+      value === 'concluida' ||
+      value === 'cancelada')
+  );
+}
 
 export const Dashboard: React.FC = () => {
   const { products, productionOrders, stockMovements } = useApp();
@@ -21,14 +45,14 @@ export const Dashboard: React.FC = () => {
   // Calculate metrics
   const mpProducts = products.filter(p => p.type === 'MP');
   const paProducts = products.filter(p => p.type === 'PA');
-  
+
   const lowStockProducts = products.filter(p => p.currentStock <= p.minStock);
   const activeOrders = productionOrders.filter(o => o.status === 'em_producao');
   const plannedOrders = productionOrders.filter(o => o.status === 'planejada');
   const completedOrders = productionOrders.filter(o => o.status === 'concluida');
 
   // Production chart data
-  const productionData = productionOrders.map(order => {
+  const productionData = productionOrders.map((order: { productId: string; quantity: number; produced: number; status: unknown }) => {
     const product = products.find(p => p.id === order.productId);
     return {
       produto: product?.name || 'Produto',
@@ -56,16 +80,6 @@ export const Dashboard: React.FC = () => {
       producao: movement.type === 'producao' ? movement.quantity : 0
     };
   });
-
-  const COLORS = ['#FE924F', '#535353', '#FFA66F', '#10B981'];
-
-  const statusColors = {
-    planejada: 'bg-info',
-    em_producao: 'bg-brand-orange',
-    pausada: 'bg-gray-500',
-    concluida: 'bg-success',
-    cancelada: 'bg-danger'
-  };
 
   return (
     <div className="space-y-6">
@@ -191,9 +205,14 @@ export const Dashboard: React.FC = () => {
             {productionOrders.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Nenhuma ordem de produção registrada</p>
             ) : (
-              productionOrders.map((order) => {
+              productionOrders.map((order: { id: string; productId: string; produced: number; quantity: number; status: unknown }) => {
                 const product = products.find(p => p.id === order.productId);
                 const progress = Math.round((order.produced / order.quantity) * 100);
+
+                // isStatus can now narrow because order.status is unknown (not any)
+                const badgeClass = isStatus(order.status) ? statusColors[order.status] : 'bg-gray-400';
+                const statusLabel = isStatus(order.status) ? order.status.replace('_', ' ') : String(order.status);
+
                 return (
                   <div key={order.id} className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -203,8 +222,11 @@ export const Dashboard: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className="text-sm">{order.produced}/{order.quantity}</span>
-                        <Badge variant="outline" className={`text-white ${statusColors[order.status]}`}>
-                          {order.status.replace('_', ' ')}
+                        <Badge
+                          variant="outline"
+                          className={`text-white ${badgeClass}`}
+                        >
+                          {statusLabel}
                         </Badge>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Alert, AlertDescription } from './ui/alert';
-import { Card, CardContent } from './ui/card';
-import { Button } from './ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertTriangle, Info, XCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 
 // Component for connection status

@@ -1,10 +1,8 @@
-"use client";
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { Check, CheckIcon } from "lucide-react"
 
-import * as React from "react";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox@1.1.4";
-import { CheckIcon } from "lucide-react@0.487.0";
-
-import { cn } from "./utils";
+import { cn } from "@/lib/utils"
 
 function Checkbox({
   className,
@@ -28,5 +26,4 @@ function Checkbox({
     </CheckboxPrimitive.Root>
   );
 }
-
-export { Checkbox };
+export { Checkbox }

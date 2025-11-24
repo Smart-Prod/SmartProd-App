@@ -14,7 +14,7 @@ export const FinishedGoodsPage: React.FC = () => {
   const { products, addStockMovement, updateProduct, stockMovements, productionOrders } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    productId: '',
+    productId: 0,
     quantity: 0,
     notes: '',
     customer: '',
@@ -42,15 +42,14 @@ export const FinishedGoodsPage: React.FC = () => {
     // Add movement record
     addStockMovement({
       productId: formData.productId,
-      type: 'saida',
+      type: 'SAIDA',
       quantity: formData.quantity,
-      date: new Date(),
-      notes: formData.notes || `Expedição para ${formData.customer || 'cliente'}`
+      product: product
     });
 
     toast.success('Expedição registrada com sucesso!');
     setIsDialogOpen(false);
-    setFormData({ productId: '', quantity: 0, notes: '', customer: '' });
+    setFormData({ productId: 0, quantity: 0, notes: '', customer: '' });
   };
 
   const getStockStatus = (product: any) => {
@@ -67,17 +66,17 @@ export const FinishedGoodsPage: React.FC = () => {
     return { label: 'Adequado', variant: 'default' as const };
   };
 
-  const getProductionInfo = (productId: string) => {
+  const getProductionInfo = (productId: number) => {
     const orders = productionOrders.filter(o => o.productId === productId);
-    const inProduction = orders.filter(o => o.status === 'em_producao').reduce((sum, o) => sum + (o.quantity - o.produced), 0);
-    const planned = orders.filter(o => o.status === 'planejada').reduce((sum, o) => sum + o.quantity, 0);
+    const inProduction = orders.filter(o => o.status === 'EM_PRODUCAO').reduce((sum, o) => sum + (o.quantity - o.produced), 0);
+    const planned = orders.filter(o => o.status === 'PLANEJADA').reduce((sum, o) => sum + o.quantity, 0);
     
     return { inProduction, planned };
   };
 
-  const getRecentShipments = (productId: string) => {
+  const getRecentShipments = (productId: number) => {
     return stockMovements
-      .filter(m => m.productId === productId && m.type === 'saida')
+      .filter(m => m.productId === productId && m.type === 'SAIDA')
       .slice(0, 3);
   };
 
@@ -85,7 +84,7 @@ export const FinishedGoodsPage: React.FC = () => {
   const totalAvailable = finishedGoods.reduce((sum, p) => sum + (p.currentStock - p.reservedStock), 0);
   const lowStockCount = finishedGoods.filter(p => p.currentStock <= p.minStock).length;
   const totalProduced = productionOrders
-    .filter(o => o.status === 'concluida')
+    .filter(o => o.status === 'CONCLUIDA')
     .reduce((sum, o) => sum + o.produced, 0);
 
   return (
@@ -114,8 +113,8 @@ export const FinishedGoodsPage: React.FC = () => {
                 <Label htmlFor="product">Produto</Label>
                 <select
                   id="product"
-                  value={formData.productId}
-                  onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                  value={formData.productId || ''}
+                  onChange={(e) => setFormData({ ...formData, productId: parseInt(e.target.value) || 0 })}
                   className="w-full p-2 border rounded-md"
                   required
                 >
@@ -311,7 +310,7 @@ export const FinishedGoodsPage: React.FC = () => {
                             <div key={movement.id} className="text-xs flex items-center space-x-1">
                               <ArrowDown className="h-3 w-3 text-red-600" />
                               <span>
-                                {movement.quantity} em {movement.date.toLocaleDateString('pt-BR')}
+                                {movement.quantity} em {new Date(movement.createdAt).toLocaleDateString('pt-BR')}
                               </span>
                             </div>
                           ))

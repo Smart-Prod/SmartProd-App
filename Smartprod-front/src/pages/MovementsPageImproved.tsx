@@ -21,7 +21,7 @@ export const MovementsPageImproved: React.FC = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    productId: '',
+    productId: 0,
     type: '',
     searchTerm: '',
   });
@@ -61,7 +61,7 @@ export const MovementsPageImproved: React.FC = () => {
         
         // Date range filter (only if dates are valid)
         if (isDateRangeValid && startDate && endDate) {
-          const movementDate = new Date(movement.date);
+          const movementDate = new Date(movement.createdAt);
           const start = new Date(startDate);
           const end = new Date(endDate);
           end.setHours(23, 59, 59, 999); // Include the entire end date
@@ -75,12 +75,10 @@ export const MovementsPageImproved: React.FC = () => {
           const searchLower = filters.searchTerm.toLowerCase();
           const productName = product?.name?.toLowerCase() || '';
           const productCode = product?.code?.toLowerCase() || '';
-          const notes = movement.notes?.toLowerCase() || '';
-          const orderId = movement.orderId || '';
+          const orderId = movement.orderId?.toString() || '';
           
           if (!productName.includes(searchLower) && 
               !productCode.includes(searchLower) && 
-              !notes.includes(searchLower) && 
               !orderId.includes(searchLower)) {
             return false;
           }
@@ -111,7 +109,7 @@ export const MovementsPageImproved: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setFilters({
-        productId: '',
+        productId: 0,
         type: '',
         searchTerm: '',
       });
@@ -140,16 +138,16 @@ export const MovementsPageImproved: React.FC = () => {
 
         const csvData = filteredMovements.map(movement => {
           const product = products.find(p => p.id === movement.productId);
+          const movementDate = new Date(movement.createdAt);
           return {
-            Data: movement.date.toLocaleDateString('pt-BR'),
-            Hora: movement.date.toLocaleTimeString('pt-BR'),
+            Data: movementDate.toLocaleDateString('pt-BR'),
+            Hora: movementDate.toLocaleTimeString('pt-BR'),
             Produto: product?.name || '',
             Código: product?.code || '',
             Tipo: getMovementTypeLabel(movement.type),
             Quantidade: movement.quantity,
             Unidade: product?.unit || '',
             Ordem: movement.orderId || '',
-            Observações: movement.notes || '',
           };
         });
 
@@ -178,30 +176,30 @@ export const MovementsPageImproved: React.FC = () => {
   // Helper functions
   const getMovementIcon = (type: string) => {
     switch (type) {
-      case 'entrada': return <ArrowUp className="h-4 w-4 text-green-600" />;
-      case 'saida': return <ArrowDown className="h-4 w-4 text-red-600" />;
-      case 'producao': return <Factory className="h-4 w-4 text-blue-600" />;
-      case 'consumo': return <Truck className="h-4 w-4 text-orange-600" />;
+      case 'ENTRADA': return <ArrowUp className="h-4 w-4 text-green-600" />;
+      case 'SAIDA': return <ArrowDown className="h-4 w-4 text-red-600" />;
+      case 'PRODUCAO': return <Factory className="h-4 w-4 text-blue-600" />;
+      case 'CONSUMO': return <Truck className="h-4 w-4 text-orange-600" />;
       default: return <ArrowUp className="h-4 w-4" />;
     }
   };
 
   const getMovementTypeLabel = (type: string) => {
     switch (type) {
-      case 'entrada': return 'Entrada';
-      case 'saida': return 'Saída';
-      case 'producao': return 'Produção';
-      case 'consumo': return 'Consumo';
+      case 'ENTRADA': return 'Entrada';
+      case 'SAIDA': return 'Saída';
+      case 'PRODUCAO': return 'Produção';
+      case 'CONSUMO': return 'Consumo';
       default: return type;
     }
   };
 
   const getMovementTypeColor = (type: string) => {
     switch (type) {
-      case 'entrada': return 'default';
-      case 'saida': return 'destructive';
-      case 'producao': return 'default';
-      case 'consumo': return 'secondary';
+      case 'ENTRADA': return 'default';
+      case 'SAIDA': return 'destructive';
+      case 'PRODUCAO': return 'default';
+      case 'CONSUMO': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -211,16 +209,16 @@ export const MovementsPageImproved: React.FC = () => {
     try {
       return {
         totalEntradas: filteredMovements
-          .filter(m => m.type === 'entrada')
+          .filter(m => m.type === 'ENTRADA')
           .reduce((sum, m) => sum + m.quantity, 0),
         totalSaidas: filteredMovements
-          .filter(m => m.type === 'saida')
+          .filter(m => m.type === 'SAIDA')
           .reduce((sum, m) => sum + m.quantity, 0),
         totalProducao: filteredMovements
-          .filter(m => m.type === 'producao')
+          .filter(m => m.type === 'PRODUCAO')
           .reduce((sum, m) => sum + m.quantity, 0),
         totalConsumo: filteredMovements
-          .filter(m => m.type === 'consumo')
+          .filter(m => m.type === 'CONSUMO')
           .reduce((sum, m) => sum + m.quantity, 0),
       };
     } catch (err) {
@@ -301,13 +299,13 @@ export const MovementsPageImproved: React.FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="product-filter">Produto</Label>
-                <Select value={filters.productId || undefined} onValueChange={(value) => setFilters({ ...filters, productId: value })}>
+                <Select value={filters.productId ? filters.productId.toString() : undefined} onValueChange={(value) => setFilters({ ...filters, productId: parseInt(value) || 0 })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todos os produtos" />
                   </SelectTrigger>
                   <SelectContent>
                     {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
+                      <SelectItem key={product.id} value={product.id.toString()}>
                         {product.name} ({product.code})
                       </SelectItem>
                     ))}
@@ -363,7 +361,7 @@ export const MovementsPageImproved: React.FC = () => {
             <CardContent>
               <div className="text-2xl text-green-600">{statistics.totalEntradas.toFixed(0)}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredMovements.filter(m => m.type === 'entrada').length} movimentações
+                {filteredMovements.filter(m => m.type === 'ENTRADA').length} movimentações
               </p>
             </CardContent>
           </Card>
@@ -376,7 +374,7 @@ export const MovementsPageImproved: React.FC = () => {
             <CardContent>
               <div className="text-2xl text-red-600">{statistics.totalSaidas.toFixed(0)}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredMovements.filter(m => m.type === 'saida').length} movimentações
+                {filteredMovements.filter(m => m.type === 'SAIDA').length} movimentações
               </p>
             </CardContent>
           </Card>
@@ -389,7 +387,7 @@ export const MovementsPageImproved: React.FC = () => {
             <CardContent>
               <div className="text-2xl text-blue-600">{statistics.totalProducao.toFixed(0)}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredMovements.filter(m => m.type === 'producao').length} movimentações
+                {filteredMovements.filter(m => m.type === 'PRODUCAO').length} movimentações
               </p>
             </CardContent>
           </Card>
@@ -402,7 +400,7 @@ export const MovementsPageImproved: React.FC = () => {
             <CardContent>
               <div className="text-2xl text-orange-600">{statistics.totalConsumo.toFixed(0)}</div>
               <p className="text-xs text-muted-foreground">
-                {filteredMovements.filter(m => m.type === 'consumo').length} movimentações
+                {filteredMovements.filter(m => m.type === 'CONSUMO').length} movimentações
               </p>
             </CardContent>
           </Card>
@@ -473,13 +471,14 @@ export const MovementsPageImproved: React.FC = () => {
                     ) : (
                       paginatedData.map((movement) => {
                         const product = products.find(p => p.id === movement.productId);
+                        const movementDate = new Date(movement.createdAt);
                         return (
                           <TableRow key={movement.id}>
                             <TableCell>
                               <div className="space-y-1">
-                                <div className="text-sm">{movement.date.toLocaleDateString('pt-BR')}</div>
+                                <div className="text-sm">{movementDate.toLocaleDateString('pt-BR')}</div>
                                 <div className="text-xs text-gray-500">
-                                  {movement.date.toLocaleTimeString('pt-BR')}
+                                  {movementDate.toLocaleTimeString('pt-BR')}
                                 </div>
                               </div>
                             </TableCell>
@@ -495,8 +494,8 @@ export const MovementsPageImproved: React.FC = () => {
                                 <span>{getMovementTypeLabel(movement.type)}</span>
                               </Badge>
                             </TableCell>
-                            <TableCell className={movement.type === 'entrada' || movement.type === 'producao' ? 'text-green-600' : 'text-red-600'}>
-                              {movement.type === 'entrada' || movement.type === 'producao' ? '+' : '-'}
+                            <TableCell className={movement.type === 'ENTRADA' || movement.type === 'PRODUCAO' ? 'text-green-600' : 'text-red-600'}>
+                              {movement.type === 'ENTRADA' || movement.type === 'PRODUCAO' ? '+' : '-'}
                               {movement.quantity.toLocaleString('pt-BR')}
                             </TableCell>
                             <TableCell>{product?.unit || '-'}</TableCell>
@@ -510,9 +509,7 @@ export const MovementsPageImproved: React.FC = () => {
                               )}
                             </TableCell>
                             <TableCell>
-                              <div className="max-w-xs truncate text-sm" title={movement.notes}>
-                                {movement.notes || '-'}
-                              </div>
+                              <span className="text-gray-400">-</span>
                             </TableCell>
                           </TableRow>
                         );

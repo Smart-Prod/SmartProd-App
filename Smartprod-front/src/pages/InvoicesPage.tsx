@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,16 +11,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Check, X, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { InvoiceType } from '../models';
 
 export const InvoicesPage: React.FC = () => {
   const { invoices, products, addInvoice, addStockMovement, updateProduct } = useApp();
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [invoiceType, setInvoiceType] = useState<'entrada' | 'saida'>('entrada');
+  const [invoiceType, setInvoiceType] = useState<InvoiceType>('ENTRADA');
   const [formData, setFormData] = useState({
     number: '',
     supplier: '',
     customer: '',
-    items: [{ productId: '', quantity: 0, value: 0 }],
+    items: [{ productId: 0, quantity: 0, value: 0 }],
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,16 +31,17 @@ export const InvoicesPage: React.FC = () => {
       // Simulate XML parsing
       setTimeout(() => {
         const mockInvoice = {
+          usuarioId: parseInt(user?.id || '1'),
+          usuario: user as any,
           type: invoiceType,
           number: `NF-${Date.now()}`,
-          date: new Date(),
-          supplier: invoiceType === 'entrada' ? 'Fornecedor Simulado' : undefined,
-          customer: invoiceType === 'saida' ? 'Cliente Simulado' : undefined,
+          supplier: invoiceType === 'ENTRADA' ? 'Fornecedor Simulado' : undefined,
+          customer: invoiceType === 'SAIDA' ? 'Cliente Simulado' : undefined,
           items: [
-            { productId: products[0]?.id || '', quantity: 10, value: 100.00 },
-            { productId: products[1]?.id || '', quantity: 5, value: 50.00 },
-          ],
-          status: 'processada' as const,
+            { productId: products[0]?.id || 0, quantity: 10, value: 100.00 },
+            { productId: products[1]?.id || 0, quantity: 5, value: 50.00 },
+          ] as any,
+          status: 'PROCESSADA' as const,
         };
         
         addInvoice(mockInvoice);
@@ -46,7 +50,7 @@ export const InvoicesPage: React.FC = () => {
         mockInvoice.items.forEach(item => {
           const product = products.find(p => p.id === item.productId);
           if (product) {
-            if (invoiceType === 'entrada') {
+            if (invoiceType === 'ENTRADA') {
               updateProduct(item.productId, {
                 currentStock: product.currentStock + item.quantity
               });
@@ -60,8 +64,7 @@ export const InvoicesPage: React.FC = () => {
               productId: item.productId,
               type: invoiceType,
               quantity: item.quantity,
-              date: new Date(),
-              notes: `NF ${mockInvoice.number} - ${invoiceType === 'entrada' ? mockInvoice.supplier : mockInvoice.customer}`
+              product: product
             });
           }
         });
@@ -77,13 +80,14 @@ export const InvoicesPage: React.FC = () => {
     e.preventDefault();
     
     const invoice = {
+      usuarioId: parseInt(user?.id || '1'),
+      usuario: user as any,
       type: invoiceType,
       number: formData.number,
-      date: new Date(),
-      supplier: invoiceType === 'entrada' ? formData.supplier : undefined,
-      customer: invoiceType === 'saida' ? formData.customer : undefined,
-      items: formData.items.filter(item => item.productId && item.quantity > 0),
-      status: 'processada' as const,
+      supplier: invoiceType === 'ENTRADA' ? formData.supplier : undefined,
+      customer: invoiceType === 'SAIDA' ? formData.customer : undefined,
+      items: formData.items.filter(item => item.productId && item.quantity > 0) as any,
+      status: 'PROCESSADA' as const,
     };
     
     if (invoice.items.length === 0) {
@@ -97,7 +101,7 @@ export const InvoicesPage: React.FC = () => {
     invoice.items.forEach(item => {
       const product = products.find(p => p.id === item.productId);
       if (product) {
-        if (invoiceType === 'entrada') {
+        if (invoiceType === 'ENTRADA') {
           updateProduct(item.productId, {
             currentStock: product.currentStock + item.quantity
           });
@@ -111,8 +115,7 @@ export const InvoicesPage: React.FC = () => {
           productId: item.productId,
           type: invoiceType,
           quantity: item.quantity,
-          date: new Date(),
-          notes: `NF ${invoice.number} - ${invoiceType === 'entrada' ? invoice.supplier : invoice.customer}`
+          product: product
         });
       }
     });
@@ -123,14 +126,14 @@ export const InvoicesPage: React.FC = () => {
       number: '',
       supplier: '',
       customer: '',
-      items: [{ productId: '', quantity: 0, value: 0 }],
+      items: [{ productId: 0, quantity: 0, value: 0 }],
     });
   };
 
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { productId: '', quantity: 0, value: 0 }]
+      items: [...formData.items, { productId: 0, quantity: 0, value: 0 }]
     });
   };
 
@@ -147,14 +150,14 @@ export const InvoicesPage: React.FC = () => {
     setFormData({ ...formData, items: newItems });
   };
 
-  const entryInvoices = invoices.filter(inv => inv.type === 'entrada');
-  const exitInvoices = invoices.filter(inv => inv.type === 'saida');
+  const entryInvoices = invoices.filter(inv => inv.type === 'ENTRADA');
+  const exitInvoices = invoices.filter(inv => inv.type === 'SAIDA');
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'processada': return <Check className="h-4 w-4 text-green-600" />;
-      case 'pendente': return <AlertCircle className="h-4 w-4 text-yellow-600" />;
-      case 'erro': return <X className="h-4 w-4 text-red-600" />;
+      case 'PROCESSADA': return <Check className="h-4 w-4 text-green-600" />;
+      case 'PENDENTE': return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      case 'ERRO': return <X className="h-4 w-4 text-red-600" />;
       default: return <AlertCircle className="h-4 w-4" />;
     }
   };
@@ -203,18 +206,18 @@ export const InvoicesPage: React.FC = () => {
                       <label className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          value="entrada"
-                          checked={invoiceType === 'entrada'}
-                          onChange={(e) => setInvoiceType(e.target.value as 'entrada')}
+                          value="ENTRADA"
+                          checked={invoiceType === 'ENTRADA'}
+                          onChange={(e) => setInvoiceType(e.target.value as InvoiceType)}
                         />
                         <span>Nota de Entrada</span>
                       </label>
                       <label className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          value="saida"
-                          checked={invoiceType === 'saida'}
-                          onChange={(e) => setInvoiceType(e.target.value as 'saida')}
+                          value="SAIDA"
+                          checked={invoiceType === 'SAIDA'}
+                          onChange={(e) => setInvoiceType(e.target.value as InvoiceType)}
                         />
                         <span>Nota de Saída</span>
                       </label>
@@ -243,11 +246,11 @@ export const InvoicesPage: React.FC = () => {
                       <Label>Tipo de Nota</Label>
                       <select
                         value={invoiceType}
-                        onChange={(e) => setInvoiceType(e.target.value as 'entrada' | 'saida')}
+                        onChange={(e) => setInvoiceType(e.target.value as InvoiceType)}
                         className="w-full p-2 border rounded-md"
                       >
-                        <option value="entrada">Nota de Entrada</option>
-                        <option value="saida">Nota de Saída</option>
+                        <option value="ENTRADA">Nota de Entrada</option>
+                        <option value="SAIDA">Nota de Saída</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -264,16 +267,16 @@ export const InvoicesPage: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="company">
-                      {invoiceType === 'entrada' ? 'Fornecedor' : 'Cliente'}
+                      {invoiceType === 'ENTRADA' ? 'Fornecedor' : 'Cliente'}
                     </Label>
                     <Input
                       id="company"
-                      value={invoiceType === 'entrada' ? formData.supplier : formData.customer}
+                      value={invoiceType === 'ENTRADA' ? formData.supplier : formData.customer}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        [invoiceType === 'entrada' ? 'supplier' : 'customer']: e.target.value 
+                        [invoiceType === 'ENTRADA' ? 'supplier' : 'customer']: e.target.value 
                       })}
-                      placeholder={`Nome do ${invoiceType === 'entrada' ? 'fornecedor' : 'cliente'}`}
+                      placeholder={`Nome do ${invoiceType === 'ENTRADA' ? 'fornecedor' : 'cliente'}`}
                       required
                     />
                   </div>
@@ -291,8 +294,8 @@ export const InvoicesPage: React.FC = () => {
                         <div className="space-y-1">
                           <Label className="text-xs">Produto</Label>
                           <select
-                            value={item.productId}
-                            onChange={(e) => updateItem(index, 'productId', e.target.value)}
+                            value={item.productId || ''}
+                            onChange={(e) => updateItem(index, 'productId', parseInt(e.target.value) || 0)}
                             className="w-full p-2 border rounded-md text-sm"
                             required
                           >
@@ -390,7 +393,7 @@ export const InvoicesPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">
-              {invoices.filter(inv => inv.status === 'processada').length}
+              {invoices.filter(inv => inv.status === 'PROCESSADA').length}
             </div>
             <p className="text-xs text-muted-foreground">Notas processadas</p>
           </CardContent>
@@ -403,7 +406,7 @@ export const InvoicesPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">
-              {invoices.filter(inv => inv.status === 'pendente').length}
+              {invoices.filter(inv => inv.status === 'PENDENTE').length}
             </div>
             <p className="text-xs text-muted-foreground">Aguardando processamento</p>
           </CardContent>
@@ -438,15 +441,15 @@ export const InvoicesPage: React.FC = () => {
                   <TableRow key={invoice.id}>
                     <TableCell className="font-mono">{invoice.number}</TableCell>
                     <TableCell>
-                      <Badge variant={invoice.type === 'entrada' ? 'default' : 'secondary'}>
-                        {invoice.type === 'entrada' ? (
+                      <Badge variant={invoice.type === 'ENTRADA' ? 'default' : 'secondary'}>
+                        {invoice.type === 'ENTRADA' ? (
                           <><ArrowUp className="h-3 w-3 mr-1" />Entrada</>
                         ) : (
                           <><ArrowDown className="h-3 w-3 mr-1" />Saída</>
                         )}
                       </Badge>
                     </TableCell>
-                    <TableCell>{invoice.date.toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{new Date(invoice.date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{invoice.supplier || invoice.customer}</TableCell>
                     <TableCell>{invoice.items.length} itens</TableCell>
                     <TableCell>

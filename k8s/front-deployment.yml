@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: front
-          image: seuusuario/smartprod-front:latest
+          image: bresssanvt/smartprod-front:latest
           ports:
             - containerPort: 5173

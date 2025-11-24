@@ -13,10 +13,11 @@ spec:
         app: smartprod-api
     spec:
       containers:
-        - name: api
-          image: seuusuario/smartprod-api:latest
+        - name: smartprod-api
+          image: bresssanvt/smartprod-api:latest
           ports:
             - containerPort: 3000
-          env:
-            - name: DATABASE_URL
-              value: "mysql://root:root@smartprod-mysql:3306/smartprod"
+
+      # Se a imagem for privada, descomente abaixo e configure o secret
+      # imagePullSecrets:
+      #   - name: regcred

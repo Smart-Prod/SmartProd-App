@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: smartprod-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: smartprod
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  api:
+    build: ./SmartProd-Api
+    container_name: smartprod-api
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "mysql://root:root@mysql:3306/smartprod"
+    depends_on:
+      - mysql
+
+  front:
+    build: ./Smartprod-front
+    container_name: smartprod-front
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:

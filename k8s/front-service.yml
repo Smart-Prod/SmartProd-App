@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartprod-front-service
+spec:
+  selector:
+    app: smartprod-front
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 5173

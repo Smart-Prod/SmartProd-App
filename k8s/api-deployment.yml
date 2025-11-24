@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartprod-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartprod-api
+  template:
+    metadata:
+      labels:
+        app: smartprod-api
+    spec:
+      containers:
+        - name: api
+          image: seuusuario/smartprod-api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              value: "mysql://root:root@smartprod-mysql:3306/smartprod"

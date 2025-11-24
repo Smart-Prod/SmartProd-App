@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartprod-mysql
+spec:
+  selector:
+    matchLabels:
+      app: smartprod-mysql
+  template:
+    metadata:
+      labels:
+        app: smartprod-mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+            - name: MYSQL_DATABASE
+              value: smartprod
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartprod-mysql
+spec:
+  selector:
+    app: smartprod-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306

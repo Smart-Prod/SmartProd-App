@@ -141,8 +141,7 @@ Classes principais: Usuário, Produto, MateriaPrima, OrdemProducao, NotaFiscal, 
 * Cinza escuro 
 * Branco
 
-<img width="1080" height="1350" alt="estudo_de_cores" src="https://github.com/user-attachments/assets/1efee094-72f3-4126-91ee-9e25c134ce2d" />
-
+<img width="1080" height="1350" alt="estudo-de_cores_fundo_branco" src="https://github.com/user-attachments/assets/99755751-4c35-4d06-9242-efbd7b4d4788" />
 
 ### **Tipografia**
 

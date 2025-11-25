@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,13 +14,14 @@ import { Plus, Play, Pause, CheckCircle, XCircle, Clock, Factory } from 'lucide-
 import { toast } from 'sonner';
 
 export const ProductionOrdersPage: React.FC = () => {
+  const { user } = useAuth();
   const { products, productionOrders, boms, addProductionOrder, updateProductionOrder, addStockMovement, updateProduct } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [producedQuantity, setProducedQuantity] = useState(0);
   const [formData, setFormData] = useState({
-    productId: '',
+    productId: 0,
     quantity: 0,
   });
 
@@ -60,16 +62,17 @@ export const ProductionOrdersPage: React.FC = () => {
 
     addProductionOrder({
       productId: formData.productId,
+      usuarioId: parseInt(user?.id || '0'),
       quantity: formData.quantity,
-      status: 'planejada',
-    });
+      status: 'PLANEJADA',
+    } as any);
 
     toast.success('Ordem de produção criada com sucesso!');
     setIsDialogOpen(false);
-    setFormData({ productId: '', quantity: 0 });
+    setFormData({ productId: 0, quantity: 0 });
   };
 
-  const handleOpenCompleteDialog = (orderId: string) => {
+  const handleOpenCompleteDialog = (orderId: number) => {
     const order = productionOrders.find(o => o.id === orderId);
     if (!order) return;
     
@@ -100,7 +103,7 @@ export const ProductionOrdersPage: React.FC = () => {
     const isFullyCompleted = newProducedTotal >= order.quantity;
     
     const updateData: any = { 
-      status: isFullyCompleted ? 'concluida' : 'pausada',
+      status: isFullyCompleted ? 'CONCLUIDA' : 'PAUSADA',
       produced: newProducedTotal
     };
 
@@ -118,12 +121,10 @@ export const ProductionOrdersPage: React.FC = () => {
       const statusText = isFullyCompleted ? 'concluída' : 'pausada';
       addStockMovement({
         productId: order.productId,
-        type: 'producao',
+        type: 'PRODUCAO',
         quantity: producedQuantity,
-        date: new Date(),
         orderId: order.id,
-        notes: `Produção ${statusText} - OP ${order.id} (${newProducedTotal} de ${order.quantity} ${product.unit})`
-      });
+      } as any);
     }
 
     // Consume raw materials proportionally
@@ -143,12 +144,10 @@ export const ProductionOrdersPage: React.FC = () => {
 
           addStockMovement({
             productId: material.materialId,
-            type: 'consumo',
+            type: 'CONSUMO',
             quantity: consumed,
-            date: new Date(),
             orderId: order.id,
-            notes: `Consumo para produção - OP ${order.id}`
-          });
+          } as any);
         }
       });
     }
@@ -166,22 +165,22 @@ export const ProductionOrdersPage: React.FC = () => {
     setProducedQuantity(0);
   };
 
-  const handleStatusChange = (orderId: string, newStatus: 'planejada' | 'em_producao' | 'pausada' | 'concluida' | 'cancelada') => {
+  const handleStatusChange = (orderId: number, newStatus: 'PLANEJADA' | 'EM_PRODUCAO' | 'PAUSADA' | 'CONCLUIDA' | 'CANCELADA') => {
     const order = productionOrders.find(o => o.id === orderId);
     if (!order) return;
 
     const updateData: any = { status: newStatus };
 
-    if (newStatus === 'em_producao' && (order.status === 'planejada' || order.status === 'pausada')) {
-      if (order.status === 'planejada') {
+    if (newStatus === 'EM_PRODUCAO' && (order.status === 'PLANEJADA' || order.status === 'PAUSADA')) {
+      if (order.status === 'PLANEJADA') {
         updateData.startedAt = new Date();
       }
       updateProductionOrder(orderId, updateData);
-      toast.success(`Ordem ${order.status === 'pausada' ? 'retomada' : 'iniciada'} com sucesso!`);
+      toast.success(`Ordem ${order.status === 'PAUSADA' ? 'retomada' : 'iniciada'} com sucesso!`);
       return;
     }
 
-    if (newStatus === 'cancelada') {
+    if (newStatus === 'CANCELADA') {
       // Release reserved materials
       const bom = boms.find(b => b.productId === order.productId);
       if (bom) {
@@ -202,22 +201,22 @@ export const ProductionOrdersPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'planejada': return <Clock className="h-4 w-4" />;
-      case 'em_producao': return <Play className="h-4 w-4" />;
-      case 'pausada': return <Pause className="h-4 w-4" />;
-      case 'concluida': return <CheckCircle className="h-4 w-4" />;
-      case 'cancelada': return <XCircle className="h-4 w-4" />;
+      case 'PLANEJADA': return <Clock className="h-4 w-4" />;
+      case 'EM_PRODUCAO': return <Play className="h-4 w-4" />;
+      case 'PAUSADA': return <Pause className="h-4 w-4" />;
+      case 'CONCLUIDA': return <CheckCircle className="h-4 w-4" />;
+      case 'CANCELADA': return <XCircle className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'planejada': return 'secondary';
-      case 'em_producao': return 'default';
-      case 'pausada': return 'outline';
-      case 'concluida': return 'secondary';
-      case 'cancelada': return 'destructive';
+      case 'PLANEJADA': return 'secondary';
+      case 'EM_PRODUCAO': return 'default';
+      case 'PAUSADA': return 'outline';
+      case 'CONCLUIDA': return 'secondary';
+      case 'CANCELADA': return 'destructive';
       default: return 'secondary';
     }
   };
@@ -226,9 +225,9 @@ export const ProductionOrdersPage: React.FC = () => {
     return Math.round((order.produced / order.quantity) * 100);
   };
 
-  const activeOrders = productionOrders.filter(o => o.status === 'em_producao');
-  const plannedOrders = productionOrders.filter(o => o.status === 'planejada');
-  const completedOrders = productionOrders.filter(o => o.status === 'concluida');
+  const activeOrders = productionOrders.filter(o => o.status === 'EM_PRODUCAO');
+  const plannedOrders = productionOrders.filter(o => o.status === 'PLANEJADA');
+  const completedOrders = productionOrders.filter(o => o.status === 'CONCLUIDA');
 
   return (
     <div className="space-y-6">
@@ -254,13 +253,13 @@ export const ProductionOrdersPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="product">Produto</Label>
-                <Select value={formData.productId} onValueChange={(value) => setFormData({ ...formData, productId: value })}>
+                <Select value={formData.productId.toString()} onValueChange={(value) => setFormData({ ...formData, productId: parseInt(value) })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um produto" />
                   </SelectTrigger>
                   <SelectContent>
                     {finishedProducts.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
+                      <SelectItem key={product.id} value={product.id.toString()}>
                         {product.name} ({product.code})
                       </SelectItem>
                     ))}
@@ -498,31 +497,31 @@ export const ProductionOrdersPage: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {order.createdAt.toLocaleDateString('pt-BR')}
+                      {new Date(order.createdAt).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
-                        {order.status === 'planejada' && (
+                        {order.status === 'PLANEJADA' && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleStatusChange(order.id, 'em_producao')}
+                            onClick={() => handleStatusChange(order.id, 'EM_PRODUCAO')}
                             title="Iniciar produção"
                           >
                             <Play className="h-4 w-4" />
                           </Button>
                         )}
-                        {order.status === 'pausada' && (
+                        {order.status === 'PAUSADA' && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleStatusChange(order.id, 'em_producao')}
+                            onClick={() => handleStatusChange(order.id, 'EM_PRODUCAO')}
                             title="Retomar produção"
                           >
                             <Play className="h-4 w-4" />
                           </Button>
                         )}
-                        {order.status === 'em_producao' && (
+                        {order.status === 'EM_PRODUCAO' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -532,11 +531,11 @@ export const ProductionOrdersPage: React.FC = () => {
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
-                        {(order.status === 'planejada' || order.status === 'em_producao' || order.status === 'pausada') && (
+                        {(order.status === 'PLANEJADA' || order.status === 'EM_PRODUCAO' || order.status === 'PAUSADA') && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleStatusChange(order.id, 'cancelada')}
+                            onClick={() => handleStatusChange(order.id, 'CANCELADA')}
                             title="Cancelar ordem"
                           >
                             <XCircle className="h-4 w-4" />

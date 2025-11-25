@@ -32,18 +32,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Tenta restaurar a sessão ao iniciar (token + fetch /users/me quando possível)
   useEffect(() => {
     const init = async () => {
-      const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
+      const token = sessionStorage.getItem('token');
+      const savedUser = sessionStorage.getItem('user');
 
       if (savedUser) {
         try {
           setUser(JSON.parse(savedUser));
         } catch {
-          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
         }
       }
 
       if (token) {
+        // Configura o token no header da API
+        API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
         // Se houver token, tenta buscar o perfil atualizado (/users/me)
         try {
           const resp = await API.get('/users');
@@ -53,12 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Ajuste conforme o shape real: payload pode ser o usuário diretamente
             const fetchedUser = payload.user ?? payload;
             setUser(fetchedUser ?? null);
-            localStorage.setItem('user', JSON.stringify(fetchedUser ?? null));
+            sessionStorage.setItem('user', JSON.stringify(fetchedUser ?? null));
           }
         } catch {
           // token inválido -> limpa tudo
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
+          delete API.defaults.headers.common['Authorization'];
           setUser(null);
         }
       }
@@ -82,9 +86,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = resp?.token ?? resp?.accessToken ?? resp?.tokenAccess ?? null;
       const userFromResp = resp?.user ?? resp?.usuario ?? resp;
 
-      if (token) localStorage.setItem('token', token);
+      if (token) {
+        sessionStorage.setItem('token', token);
+        API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
       if (userFromResp) {
-        localStorage.setItem('user', JSON.stringify(userFromResp));
+        sessionStorage.setItem('user', JSON.stringify(userFromResp));
         setUser(userFromResp);
       }
 
@@ -114,9 +121,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = payload?.token ?? payload?.accessToken ?? null;
       const userFromResp = payload?.user ?? payload?.usuario ?? payload;
 
-      if (token) localStorage.setItem('token', token);
+      if (token) {
+        sessionStorage.setItem('token', token);
+        API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
       if (userFromResp) {
-        localStorage.setItem('user', JSON.stringify(userFromResp));
+        sessionStorage.setItem('user', JSON.stringify(userFromResp));
         setUser(userFromResp);
       }
 
@@ -130,8 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    delete API.defaults.headers.common['Authorization'];
     setUser(null);
   };
 

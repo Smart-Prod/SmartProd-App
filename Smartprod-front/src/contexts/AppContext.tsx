@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
+import API from '../services/api';
 import type { Product, BOM, StockMovement, ProductionOrder, Invoice } from '../models/index';
 
 export type { Product, BOM, StockMovement, ProductionOrder, Invoice };
@@ -16,7 +16,6 @@ interface AppContextType {
   updateProductionOrder: (id: number, order: Partial<ProductionOrder>) => Promise<void>;
   addStockMovement: (movement: Omit<StockMovement, 'id' | 'createdAt'>) => Promise<StockMovement>;
   addInvoice: (invoice: Omit<Invoice, 'id' | 'date'>) => Promise<Invoice>;
-  // addBOM accepts BOM without id — provider generates id
   addBOM: (bom: Omit<BOM, 'id'>) => Promise<BOM>;
 }
 
@@ -28,13 +27,6 @@ export const useApp = () => {
   return context;
 };
 
-// Use Vite's import.meta.env for environment variable access
-const api = axios.create({
-  // VITE_API_URL provided in your message, fallback to prior default if not set
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api',
-  // You can add headers/interceptors here if needed
-});
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [boms, setBoms] = useState<BOM[]>([]);
@@ -42,27 +34,91 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [productionOrders, setProductionOrders] = useState<ProductionOrder[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
+  // Função para buscar produtos da API
+  const fetchProducts = useCallback(async () => {
+    try {
+      console.log('fetchProducts: Iniciando busca de produtos...');
+      const res = await API.get('/products');
+      console.log('fetchProducts: Resposta completa:', res);
+      console.log('fetchProducts: res.data:', res.data);
+      
+      // A API retorna { success, message, data }
+      const productsData = res.data.data || res.data;
+      console.log('fetchProducts: productsData extraído:', productsData);
+      console.log('fetchProducts: É array?', Array.isArray(productsData));
+      
+      setProducts(Array.isArray(productsData) ? productsData : []);
+      console.log('fetchProducts: Produtos definidos no estado');
+    } catch (err) {
+      console.error('fetchProducts: Erro ao buscar produtos:', err);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     const fetchData = async () => {
+      console.log('useEffect: Iniciando carregamento de dados...');
+      
+      // Busca produtos
       try {
-        const [productsRes, bomsRes, stockRes, ordersRes, invoicesRes] = await Promise.all([
-          api.get<Product[]>('/products'),
-          api.get<BOM[]>('/boms'),
-          api.get<StockMovement[]>('/stock-movements'),
-          api.get<ProductionOrder[]>('/production-orders'),
-          api.get<Invoice[]>('/invoices'),
-        ]);
-
-        if (!mounted) return;
-
-        setProducts(productsRes.data);
-        setBoms(bomsRes.data);
-        setStockMovements(stockRes.data);
-        setProductionOrders(ordersRes.data);
-        setInvoices(invoicesRes.data);
+        const productsRes = await API.get('/products');
+        console.log('✅ PRODUTOS - Resposta completa:', productsRes);
+        console.log('✅ PRODUTOS - productsRes.data:', productsRes.data);
+        
+        if (mounted) {
+          const productsData = productsRes.data.data || productsRes.data;
+          console.log('✅ PRODUTOS - productsData extraído:', productsData);
+          console.log('✅ PRODUTOS - É array?', Array.isArray(productsData));
+          console.log('✅ PRODUTOS - Quantidade:', Array.isArray(productsData) ? productsData.length : 0);
+          
+          setProducts(Array.isArray(productsData) ? productsData : []);
+        }
       } catch (err) {
-        console.error('Erro ao buscar dados da API:', err);
+        console.error('❌ PRODUTOS - Erro:', err);
+      }
+
+      // Busca BOMs (silencioso em caso de erro)
+      try {
+        const bomsRes = await API.get('/boms');
+        if (mounted) {
+          const bomsData = bomsRes.data.data || bomsRes.data;
+          setBoms(Array.isArray(bomsData) ? bomsData : []);
+        }
+      } catch (err) {
+        // Silencioso - endpoint pode não existir
+      }
+
+      // Busca Stock Movements (silencioso em caso de erro)
+      try {
+        const stockRes = await API.get('/stock-movements');
+        if (mounted) {
+          const stockData = stockRes.data.data || stockRes.data;
+          setStockMovements(Array.isArray(stockData) ? stockData : []);
+        }
+      } catch (err) {
+        // Silencioso - endpoint pode não existir
+      }
+
+      // Busca Production Orders (silencioso em caso de erro)
+      try {
+        const ordersRes = await API.get('/production-orders');
+        if (mounted) {
+          const ordersData = ordersRes.data.data || ordersRes.data;
+          setProductionOrders(Array.isArray(ordersData) ? ordersData : []);
+        }
+      } catch (err) {
+        // Silencioso - endpoint pode não existir
+      }
+
+      // Busca Invoices (silencioso em caso de erro)
+      try {
+        const invoicesRes = await API.get('/invoices');
+        if (mounted) {
+          const invoicesData = invoicesRes.data.data || invoicesRes.data;
+          setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        }
+      } catch (err) {
+        // Silencioso - endpoint pode não existir
       }
     };
 
@@ -76,20 +132,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProduct = useCallback(async (product: Omit<Product, 'id'>): Promise<Product> => {
     try {
-      const res = await api.post<Product>('/products', product);
-      setProducts(prev => [...prev, res.data]);
-      return res.data;
-    } catch (err) {
-      console.warn('addProduct: API failed, using local fallback', err);
-      const newProduct: Product = { ...product, id: genId() };
-      setProducts(prev => [...prev, newProduct]);
+      console.log('addProduct: Criando produto:', product);
+      const res = await API.post('/products/create', product);
+      console.log('addProduct: Resposta da criação:', res.data);
+      
+      // A API retorna { success, message, data }
+      const newProduct = res.data.data;
+      
+      // Recarrega a lista completa de produtos após criar
+      console.log('addProduct: Recarregando lista de produtos...');
+      await fetchProducts();
+      
       return newProduct;
+    } catch (err: any) {
+      console.error('addProduct: API failed', err.response?.data || err.message);
+      throw err;
     }
-  }, []);
+  }, [fetchProducts]);
 
   const updateProduct = useCallback(async (id: number, product: Partial<Product>): Promise<void> => {
     try {
-      await api.put(`/products/${id}`, product);
+      await API.put(`/products/${id}`, product);
       setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...product } : p)));
     } catch (err) {
       console.warn('updateProduct: API failed, applied local update', err);
@@ -102,7 +165,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ): Promise<ProductionOrder> => {
     const payload = { ...order, createdAt: new Date().toISOString(), produced: 0 };
     try {
-      const res = await api.post<ProductionOrder>('/production-orders', payload);
+      const res = await API.post<ProductionOrder>('/production-orders', payload);
       setProductionOrders(prev => [...prev, res.data]);
       return res.data;
     } catch (err) {
@@ -115,7 +178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateProductionOrder = useCallback(async (id: number, order: Partial<ProductionOrder>): Promise<void> => {
     try {
-      await api.put(`/production-orders/${id}`, order);
+      await API.put(`/production-orders/${id}`, order);
       setProductionOrders(prev => prev.map(o => (o.id === id ? { ...o, ...order } : o)));
     } catch (err) {
       console.warn('updateProductionOrder: API failed, applied local update', err);
@@ -126,7 +189,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addStockMovement = useCallback(async (movement: Omit<StockMovement, 'id' | 'createdAt'>): Promise<StockMovement> => {
     const payload = { ...movement, createdAt: new Date().toISOString() };
     try {
-      const res = await api.post<StockMovement>('/stock-movements', payload);
+      const res = await API.post<StockMovement>('/stock-movements', payload);
       setStockMovements(prev => [res.data, ...prev]);
       return res.data;
     } catch (err) {
@@ -140,7 +203,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addInvoice = useCallback(async (invoice: Omit<Invoice, 'id' | 'date'>): Promise<Invoice> => {
     const payload = { ...invoice, date: new Date().toISOString() };
     try {
-      const res = await api.post<Invoice>('/invoices', payload);
+      const res = await API.post<Invoice>('/invoices', payload);
       setInvoices(prev => [res.data, ...prev]);
       return res.data;
     } catch (err) {
@@ -153,7 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addBOM = useCallback(async (bom: Omit<BOM, 'id'>): Promise<BOM> => {
     try {
-      const res = await api.post<BOM>('/boms', bom);
+      const res = await API.post<BOM>('/boms', bom);
       setBoms(prev => [...prev, res.data]);
       return res.data;
     } catch (err) {

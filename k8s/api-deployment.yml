@@ -14,10 +14,14 @@ spec:
     spec:
       containers:
         - name: smartprod-api
-          image: bresssanvt/smartprod-api:latest
+          image: smartprod-api:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 3000
-
-      # Se a imagem for privada, descomente abaixo e configure o secret
-      # imagePullSecrets:
-      #   - name: regcred
+          env:
+            - name: DATABASE_URL
+              value: "mysql://smartproduser:smartprodpass@smartprod-mysql:3306/smartproddb"
+            - name: JWT_SECRET
+              value: "seuSegredoSuperSeguro123"
+            - name: JWT_EXPIRES_IN
+              value: "1d"

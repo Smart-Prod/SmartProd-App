@@ -13,9 +13,9 @@ import { toast } from 'sonner';
 export const RawMaterialsPage: React.FC = () => {
   const { products, addStockMovement, updateProduct, stockMovements } = useApp();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
+  const [movementType, setMovementType] = useState<'ENTRADA' | 'SAIDA'>('ENTRADA');
   const [formData, setFormData] = useState({
-    productId: '',
+    productId: 0,
     quantity: 0,
     notes: '',
   });
@@ -28,13 +28,13 @@ export const RawMaterialsPage: React.FC = () => {
     const product = rawMaterials.find(p => p.id === formData.productId);
     if (!product) return;
 
-    if (movementType === 'saida' && formData.quantity > (product.currentStock - product.reservedStock)) {
+    if (movementType === 'SAIDA' && formData.quantity > (product.currentStock - product.reservedStock)) {
       toast.error('Quantidade insuficiente em estoque!');
       return;
     }
 
     // Update stock
-    const newStock = movementType === 'entrada' 
+    const newStock = movementType === 'ENTRADA' 
       ? product.currentStock + formData.quantity
       : product.currentStock - formData.quantity;
 
@@ -45,13 +45,11 @@ export const RawMaterialsPage: React.FC = () => {
       productId: formData.productId,
       type: movementType,
       quantity: formData.quantity,
-      date: new Date(),
-      notes: formData.notes || `${movementType === 'entrada' ? 'Entrada' : 'Saída'} manual`
-    });
+    } as any);
 
-    toast.success(`${movementType === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
+    toast.success(`${movementType === 'ENTRADA' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
     setIsDialogOpen(false);
-    setFormData({ productId: '', quantity: 0, notes: '' });
+    setFormData({ productId: 0, quantity: 0, notes: '' });
   };
 
   const getStockStatus = (product: any) => {
@@ -68,7 +66,7 @@ export const RawMaterialsPage: React.FC = () => {
     return { label: 'Adequado', variant: 'default' as const, icon: Package };
   };
 
-  const getRecentMovements = (productId: string) => {
+  const getRecentMovements = (productId: number) => {
     return stockMovements
       .filter(m => m.productId === productId)
       .slice(0, 3);
@@ -88,13 +86,13 @@ export const RawMaterialsPage: React.FC = () => {
         <div className="flex space-x-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setMovementType('entrada')}>
+              <Button onClick={() => setMovementType('ENTRADA')}>
                 <ArrowUp className="mr-2 h-4 w-4" />
                 Entrada
               </Button>
             </DialogTrigger>
             <DialogTrigger asChild>
-              <Button variant="outline" onClick={() => setMovementType('saida')}>
+              <Button variant="outline" onClick={() => setMovementType('SAIDA')}>
                 <ArrowDown className="mr-2 h-4 w-4" />
                 Saída
               </Button>
@@ -102,7 +100,7 @@ export const RawMaterialsPage: React.FC = () => {
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>
-                  {movementType === 'entrada' ? 'Entrada de Estoque' : 'Saída de Estoque'}
+                  {movementType === 'ENTRADA' ? 'Entrada de Estoque' : 'Saída de Estoque'}
                 </DialogTitle>
                 <DialogDescription>
                   Registre uma {movementType} de matéria-prima
@@ -113,14 +111,14 @@ export const RawMaterialsPage: React.FC = () => {
                   <Label htmlFor="product">Matéria-Prima</Label>
                   <select
                     id="product"
-                    value={formData.productId}
-                    onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
+                    value={formData.productId.toString()}
+                    onChange={(e) => setFormData({ ...formData, productId: parseInt(e.target.value) || 0 })}
                     className="w-full p-2 border rounded-md"
                     required
                   >
-                    <option value="">Selecione uma matéria-prima</option>
+                    <option value="0">Selecione uma matéria-prima</option>
                     {rawMaterials.map((product) => (
-                      <option key={product.id} value={product.id}>
+                      <option key={product.id} value={product.id.toString()}>
                         {product.name} ({product.code}) - Disponível: {(product.currentStock - product.reservedStock).toFixed(2)} {product.unit}
                       </option>
                     ))}
@@ -180,7 +178,7 @@ export const RawMaterialsPage: React.FC = () => {
                     Cancelar
                   </Button>
                   <Button type="submit">
-                    Registrar {movementType === 'entrada' ? 'Entrada' : 'Saída'}
+                    Registrar {movementType === 'ENTRADA' ? 'Entrada' : 'Saída'}
                   </Button>
                 </div>
               </form>
@@ -291,13 +289,13 @@ export const RawMaterialsPage: React.FC = () => {
                         ) : (
                           recentMovements.map((movement) => (
                             <div key={movement.id} className="text-xs flex items-center space-x-1">
-                              {movement.type === 'entrada' ? (
+                              {movement.type === 'ENTRADA' ? (
                                 <ArrowUp className="h-3 w-3 text-green-600" />
                               ) : (
                                 <ArrowDown className="h-3 w-3 text-red-600" />
                               )}
                               <span>
-                                {movement.quantity.toFixed(2)} em {movement.date.toLocaleDateString('pt-BR')}
+                                {movement.quantity.toFixed(2)} em {new Date(movement.createdAt).toLocaleDateString('pt-BR')}
                               </span>
                             </div>
                           ))

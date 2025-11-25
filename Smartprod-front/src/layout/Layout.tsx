@@ -43,7 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
 
   const menuItems = [
     { id: "/dashboard", label: "Dashboard", icon: Home },
-    { id: "/products", label: "Cadastros", icon: FilePlus },
+    { id: "/bom", label: "Cadastros", icon: FilePlus },
     { id: "/products", label: "Produtos", icon: Package },
     { id: "/raw-materials", label: "Matéria-Prima", icon: Boxes },
     { id: "/finished-goods", label: "Produtos Acabados", icon: Archive },

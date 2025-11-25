@@ -47,7 +47,7 @@ export const InvoicesPage: React.FC = () => {
         addInvoice(mockInvoice);
         
         // Process stock movements
-        mockInvoice.items.forEach(item => {
+        mockInvoice.items.forEach((item: { productId: number; quantity: number; value: number }) => {
           const product = products.find(p => p.id === item.productId);
           if (product) {
             if (invoiceType === 'ENTRADA') {
@@ -98,7 +98,7 @@ export const InvoicesPage: React.FC = () => {
     addInvoice(invoice);
     
     // Process stock movements
-    invoice.items.forEach(item => {
+    invoice.items.forEach((item: { productId: number; quantity: number; value: number }) => {
       const product = products.find(p => p.id === item.productId);
       if (product) {
         if (invoiceType === 'ENTRADA') {

@@ -17,15 +17,15 @@ export const ReportsPage: React.FC = () => {
   });
 
   const filteredMovements = stockMovements.filter(
-    m => m.date >= new Date(dateRange.start) && m.date <= new Date(dateRange.end)
+    m => new Date(m.createdAt) >= new Date(dateRange.start) && new Date(m.createdAt) <= new Date(dateRange.end)
   );
 
   const filteredOrders = productionOrders.filter(
-    o => o.createdAt >= new Date(dateRange.start) && o.createdAt <= new Date(dateRange.end)
+    o => new Date(o.createdAt) >= new Date(dateRange.start) && new Date(o.createdAt) <= new Date(dateRange.end)
   );
 
   const filteredInvoices = invoices.filter(
-    i => i.date >= new Date(dateRange.start) && i.date <= new Date(dateRange.end)
+    i => new Date(i.date) >= new Date(dateRange.start) && new Date(i.date) <= new Date(dateRange.end)
   );
 
   // Production Report Data
@@ -58,7 +58,7 @@ export const ReportsPage: React.FC = () => {
 
   // Movement Analysis Data
   const movementData = filteredMovements.reduce((acc, movement) => {
-    const date = movement.date.toLocaleDateString('pt-BR');
+    const date = new Date(movement.createdAt).toLocaleDateString('pt-BR');
     const existing = acc.find(item => item.data === date);
     
     if (existing) {
@@ -66,10 +66,10 @@ export const ReportsPage: React.FC = () => {
     } else {
       acc.push({
         data: date,
-        entrada: movement.type === 'entrada' ? movement.quantity : 0,
-        saida: movement.type === 'saida' ? movement.quantity : 0,
-        producao: movement.type === 'producao' ? movement.quantity : 0,
-        consumo: movement.type === 'consumo' ? movement.quantity : 0,
+        entrada: movement.type === 'ENTRADA' ? movement.quantity : 0,
+        saida: movement.type === 'SAIDA' ? movement.quantity : 0,
+        producao: movement.type === 'PRODUCAO' ? movement.quantity : 0,
+        consumo: movement.type === 'CONSUMO' ? movement.quantity : 0,
       });
     }
     
@@ -81,7 +81,7 @@ export const ReportsPage: React.FC = () => {
     .filter(p => p.type === 'PA')
     .map(product => {
       const sales = filteredMovements
-        .filter(m => m.productId === product.id && m.type === 'saida')
+        .filter(m => m.productId === product.id && m.type === 'SAIDA')
         .reduce((sum, m) => sum + m.quantity, 0);
       
       return {
@@ -99,7 +99,7 @@ export const ReportsPage: React.FC = () => {
     .filter(p => p.type === 'MP')
     .map(product => {
       const consumed = filteredMovements
-        .filter(m => m.productId === product.id && m.type === 'consumo')
+        .filter(m => m.productId === product.id && m.type === 'CONSUMO')
         .reduce((sum, m) => sum + m.quantity, 0);
       
       return {

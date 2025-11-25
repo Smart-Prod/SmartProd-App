@@ -11,6 +11,7 @@ const Register = lazy(() => import("./pages/Register"))
 const Layout = lazy(() => import("./layout/Layout").then(m => ({ default: m.Layout })))
 const Dashboard = lazy(() => import("./pages/Dashboard").then(m => ({ default: m.Dashboard })))
 const ProductsPage = lazy(() => import("./pages/ProductsPage").then(m => ({ default: m.ProductsPage })))
+const ReceitasPage = lazy(() => import("./pages/ReceitasPages").then(m => ({ default: m.BOMRegister })))
 const RawMaterialsPage = lazy(() => import("./pages/RawMaterialsPage").then(m => ({ default: m.RawMaterialsPage })))
 const FinishedGoodsPage = lazy(() => import("./pages/FinishedGoodsPage").then(m => ({ default: m.FinishedGoodsPage })))
 const ProductionOrdersPage = lazy(() => import("./pages/ProductionOrdersPage").then(m => ({ default: m.ProductionOrdersPage })))
@@ -21,7 +22,17 @@ const AdminPage = lazy(() => import("./pages/AdminPage").then(m => ({ default: m
 
 /** --- Proteção de Rotas --- */
 function RequireAuth({ children }: { children: React.ReactElement }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  
+  // Aguarda o carregamento antes de redirecionar
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+  
   if (!user) return <Navigate to="/login" replace />
   return children
 }
@@ -33,7 +44,17 @@ function RequireRole({
   children: React.ReactElement
   role: string
 }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  
+  // Aguarda o carregamento antes de redirecionar
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+  
   if (!user) return <Navigate to="/login" replace />
   if (user.role !== role) return <Navigate to="/dashboard" replace />
   return children
@@ -88,6 +109,7 @@ export default function App(): JSX.Element {
                 >
                   <Route index element={<Navigate to="/dashboard" replace />} />
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="bom" element={<ReceitasPage />} />
                   <Route path="products" element={<ProductsPage />} />
                   <Route path="products/:id" element={<ProductsPage />} />
                   <Route path="raw-materials" element={<RawMaterialsPage />} />

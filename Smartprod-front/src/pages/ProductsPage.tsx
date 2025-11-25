@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +16,13 @@ import { Plus, Edit, Package, AlertTriangle, Search, X, Filter } from 'lucide-re
 import { toast } from 'sonner';
 
 export const ProductsPage: React.FC = () => {
+  const { user } = useAuth();
   const { products, addProduct, updateProduct } = useApp();
   const { error, handleError, clearError } = useErrorHandler();
   const { isLoading, withLoading } = useLoading();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<string | null>(null);
+  const [editingProduct, setEditingProduct] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -106,7 +108,17 @@ export const ProductsPage: React.FC = () => {
           updateProduct(editingProduct, formData);
           toast.success('Produto atualizado com sucesso!');
         } else {
-          addProduct(formData);
+          const productData = {
+            code: formData.code,
+            name: formData.name,
+            type: formData.type,
+            unit: formData.unit,
+            currentStock: formData.currentStock,
+            reservedStock: formData.reservedStock,
+            minStock: formData.minStock,
+            usuarioId: user?.id || '1'
+          };
+          await addProduct(productData as any);
           toast.success('Produto criado com sucesso!');
         }
         
